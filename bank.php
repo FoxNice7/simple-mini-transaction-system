@@ -15,7 +15,24 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             die("Sender id cant equal Receiver id");
         }
 
-        
+        $db->beginTransaction();
+
+        $stmt = $db->prepare("SELECT balance FROM users WHERE id = :id FOR UPDATE");
+        $stmt->execute(['id' => $sender_id]);
+        $sender = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$sender){
+            throw new Exception('Sender is not found');
+        }
+
+        $stmt->execute(['id' => $receiver_id]);
+        $receiver = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$receiver){
+            throw new Exception('Receiver is not found');
+        }
+
+        $db->commit();
 
 
 

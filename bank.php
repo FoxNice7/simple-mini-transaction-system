@@ -1,42 +1,43 @@
 <?php
 require_once('db.php');
 
-if($_SERVER['REQUEST_METHOD'] === 'POST'){
-    try{
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
         $sender_id = (int) ($_POST['from_user_id'] ?? 0);
         $receiver_id = (int) ($_POST['to_user_id'] ?? 0);
         $amount = (float) ($_POST['amount'] ?? 0);
 
-        if(!$sender_id || !$receiver_id){
+        if (!$sender_id || !$receiver_id) {
             die("Sender or Receiver id is null");
         }
 
-        if($sender_id === $receiver_id){
+        if ($sender_id === $receiver_id) {
             die("Sender id cant equal Receiver id");
         }
 
-        if($amount < 0){
-            die("Negative amount of money");
+        if ($amount <= 0) {
+            die("Negative or zero amount of money");
         }
 
         $db->beginTransaction();
 
-        $stmt = $db->prepare("SELECT balance FROM users WHERE id = :id FOR UPDATE");
-        $stmt->execute(['id' => $sender_id]);
-        $sender = $stmt->fetch(PDO::FETCH_ASSOC);
+        $senderStmt = $db->prepare("SELECT balance FROM users WHERE id = :id FOR UPDATE");
+        $senderStmt->execute(['id' => $sender_id]);
+        $sender = $senderStmt->fetch(PDO::FETCH_ASSOC);
 
-        if(!$sender){
+        if (!$sender) {
             throw new Exception('Sender is not found');
         }
 
-        $stmt->execute(['id' => $receiver_id]);
-        $receiver = $stmt->fetch(PDO::FETCH_ASSOC);
+        $receiverStmt = $db->prepare("SELECT balance FROM users WHERE id = :id FOR UPDATE");
+        $receiverStmt->execute(['id' => $receiver_id]);
+        $receiver = $receiverStmt->fetch(PDO::FETCH_ASSOC);
 
-        if(!$receiver){
+        if (!$receiver) {
             throw new Exception('Receiver is not found');
         }
 
-        if($sender['balance'] < $amount){
+        if ($sender['balance'] < $amount) {
             throw new Exception('Too litle money on balance');
         }
 
@@ -46,8 +47,8 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             'id' => $sender_id
         ]);
 
-        $from_log = $db->prepare("INSERT INTO logs(action,user_id,created_at) VALUES('transfer_out', :id,NOW())");
-        $from_log->execute(['id' => $sender_id]);
+        $from_log = $db->prepare("INSERT INTO logs(action,user_id,created_at,amount) VALUES('transfer_out', :id,NOW(),:amount)");
+        $from_log->execute(['id' => $sender_id, 'amount' => $amount]);
 
         $receive = $db->prepare("UPDATE users SET balance = balance + :amount WHERE id = :id");
         $receive->execute([
@@ -55,18 +56,18 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             'id' => $receiver_id
         ]);
 
-        $to_log = $db->prepare("INSERT INTO logs(action,user_id,created_at) VALUES('transfer_in', :id,NOW())");
-        $to_log->execute(['id' => $receiver_id]);
+        $to_log = $db->prepare("INSERT INTO logs(action,user_id,created_at,amount) VALUES('transfer_in', :id,NOW(), :amount)");
+        $to_log->execute(['id' => $receiver_id, 'amount' => $amount]);
 
         $db->commit();
 
 
         echo 'Transaction sucesfull!!!';
-    }catch(Exception $e){
-        if($db->inTransaction()){
+    } catch (Exception $e) {
+        if ($db->inTransaction()) {
             $db->rollBack();
         }
-        echo 'Error: '. $e->getMessage();
+        echo 'Error: ' . $e->getMessage();
     }
 }
 
@@ -75,11 +76,13 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
     <form method="post">
         <label for="sender">From</label>
@@ -91,4 +94,5 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
         <button type="submit">Submit</button>
     </form>
 </body>
+
 </html>

@@ -46,11 +46,17 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             'id' => $sender_id
         ]);
 
+        $from_log = $db->prepare("INSERT INTO logs(action,user_id,created_at) VALUES('transfer_out', :id,NOW())");
+        $from_log->execute(['id' => $sender_id]);
+
         $receive = $db->prepare("UPDATE users SET balance = balance + :amount WHERE id = :id");
         $receive->execute([
             'amount' => $amount,
             'id' => $receiver_id
         ]);
+
+        $to_log = $db->prepare("INSERT INTO logs(action,user_id,created_at) VALUES('transfer_in', :id,NOW())");
+        $to_log->execute(['id' => $receiver_id]);
 
         $db->commit();
 

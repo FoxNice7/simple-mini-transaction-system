@@ -3,9 +3,20 @@ require_once('db.php');
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     try{
-        $sender = (int) $_POST['sender'];
-        $receiver = (int) $_POST['receiver'];
-        $amount = (float) $_POST['amount'];
+        $sender_id = (int) ($_POST['sender'] ?? 0);
+        $receiver_id = (int) ($_POST['receiver'] ?? 0);
+        $amount = (float) ($_POST['amount'] ?? 0);
+
+        if(!$sender_id || !$receiver_id){
+            die("Sender or Receiver id is null");
+        }
+
+        if($sender_id === $receiver_id){
+            die("Sender id cant equal Receiver id");
+        }
+
+        
+
 
 
     }catch(Exception $e){

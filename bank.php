@@ -13,7 +13,13 @@
 </head>
 <body>
     <form method="post">
-        <label for="sender"></label>
+        <label for="sender">From</label>
+        <input type="text" name="from_user_id" id="sender">
+        <label for="receiver">To</label>
+        <input type="text" name="to_user_id" id="receiver">
+        <label for="amount">Amount</label>
+        <input type="text" name="amount" id="amount">
+        <button type="submit">Submit</button>
     </form>
 </body>
 </html>

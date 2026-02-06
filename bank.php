@@ -3,8 +3,8 @@ require_once('db.php');
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     try{
-        $sender_id = (int) ($_POST['sender'] ?? 0);
-        $receiver_id = (int) ($_POST['receiver'] ?? 0);
+        $sender_id = (int) ($_POST['from_user_id'] ?? 0);
+        $receiver_id = (int) ($_POST['to_user_id'] ?? 0);
         $amount = (float) ($_POST['amount'] ?? 0);
 
         if(!$sender_id || !$receiver_id){
@@ -13,6 +13,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
         if($sender_id === $receiver_id){
             die("Sender id cant equal Receiver id");
+        }
+
+        if($amount < 0){
+            die("Negative amount of money");
         }
 
         $db->beginTransaction();
@@ -32,10 +36,26 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             throw new Exception('Receiver is not found');
         }
 
+        if($sender['balance'] < $amount){
+            throw new Exception('Too litle money on balance');
+        }
+
+        $send = $db->prepare("UPDATE users SET balance = balance - :amount WHERE id = :id");
+        $send->execute([
+            'amount' => $amount,
+            'id' => $sender_id
+        ]);
+
+        $receive = $db->prepare("UPDATE users SET balance = balance + :amount WHERE id = :id");
+        $receive->execute([
+            'amount' => $amount,
+            'id' => $receiver_id
+        ]);
+
         $db->commit();
 
 
-
+        echo 'Transaction sucesfull!!!';
     }catch(Exception $e){
         if($db->inTransaction()){
             $db->rollBack();

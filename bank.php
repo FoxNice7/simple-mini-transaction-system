@@ -1,6 +1,21 @@
 <?php
 require_once('db.php');
 
+if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    try{
+        $sender = (int) $_POST['sender'];
+        $receiver = (int) $_POST['receiver'];
+        $amount = (float) $_POST['amount'];
+
+
+    }catch(Exception $e){
+        if($db->inTransaction()){
+            $db->rollBack();
+        }
+        echo 'Error: '. $e->getMessage();
+    }
+}
+
 
 
 ?>

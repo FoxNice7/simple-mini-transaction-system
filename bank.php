@@ -47,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => $sender_id
         ]);
 
+        if ($send->rowCount() !== 1) {
+            throw new Exception('Sender update failed');
+        }
+
         $from_log = $db->prepare("INSERT INTO logs(action,user_id,created_at,amount) VALUES('transfer_out', :id,NOW(),:amount)");
         $from_log->execute(['id' => $sender_id, 'amount' => $amount]);
 
@@ -55,6 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'amount' => $amount,
             'id' => $receiver_id
         ]);
+        if ($receive->rowCount() !== 1) {
+            throw new Exception('Receiver update failed');
+        }
 
         $to_log = $db->prepare("INSERT INTO logs(action,user_id,created_at,amount) VALUES('transfer_in', :id,NOW(), :amount)");
         $to_log->execute(['id' => $receiver_id, 'amount' => $amount]);
